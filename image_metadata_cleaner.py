@@ -5,9 +5,44 @@ import sys
 from PIL import Image, PngImagePlugin
 
 UNICODE_TO_ASCII_MAP = {
-    "’": "'",
-    "，": ",",
+    # (187)
+    "»": ",",
+    # (322)
+    "ł": "l",
+    # (324)
+    "ń": "n",
+    # (339)
+    "œ": "ae",
+    # (966)
     "φ": "phi",
+    # (8208)
+    "‐": "-",
+    # (8220)
+    "“": '"',
+    # (8221)
+    "”": '"',
+    # (8216)
+    "‘": "'",
+    # (8217)
+    "’": "'",
+    # (9792)
+    "♀": "female",
+    # (10023)
+    "✧": "star",
+    # (10024)
+    "✨": "star",
+    # (12539)
+    "・": " ",
+    # (20161)
+    "仁": "?",
+    # (20799)
+    "儿": "?",
+    # (61443)
+    "": " ",
+    # (61458)
+    "": ",",
+    # (65292)
+    "，": ",",
 }
 
 @contextlib.contextmanager
@@ -25,14 +60,14 @@ def clean_metadata(input_path, output_path, debug, log_file):
 
         metadata = PngImagePlugin.PngInfo()
 
-        if 'parameters' in img.info:
-            data = img.info['parameters']
+        if "parameters" in img.info:
+            data = img.info["parameters"]
 
             cleaned_data = []
             for char in data:
                 if char in UNICODE_TO_ASCII_MAP:
                     cleaned_data.append(UNICODE_TO_ASCII_MAP[char])
-                elif ord(char) < 128:
+                elif ord(char) < 255:
                     cleaned_data.append(char)
                 else:
                     msg = f"Found unicode character {char} ({ord(char)}) in {input_path}"
@@ -42,7 +77,7 @@ def clean_metadata(input_path, output_path, debug, log_file):
                     else:
                         print(msg)
                     cleaned_data.append(f"U{ord(char):04x}")
-            metadata.add_text('parameters', "".join(cleaned_data))
+            metadata.add_text("parameters", "".join(cleaned_data))
 
         if debug:
             print("")
