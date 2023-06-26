@@ -1,47 +1,61 @@
-from PIL import Image, PngImagePlugin
-
+import contextlib
 import os
 import sys
 
+from PIL import Image, PngImagePlugin
 
 UNICODE_TO_ASCII_MAP = {
     "’": "'",
+    "，": ",",
     "φ": "phi",
 }
 
-def clean_metadata(input_path, output_path, debug):
-    img = Image.open(input_path)
-    if debug:
-        print(img.info)
+@contextlib.contextmanager
+def with_image(path):
+    img = Image.open(path)
+    try:
+        yield img
+    finally:
+        img.close()
 
-    metadata = PngImagePlugin.PngInfo()
+def clean_metadata(input_path, output_path, debug, log_file):
+    with with_image(input_path) as img:
+        if debug:
+            print(img.info)
 
-    if 'parameters' in img.info:
-        data = img.info['parameters']
+        metadata = PngImagePlugin.PngInfo()
 
-        cleaned_data = []
-        for char in data:
-            if char in UNICODE_TO_ASCII_MAP:
-                cleaned_data.append(UNICODE_TO_ASCII_MAP[char])
-            elif ord(char) < 128:
-                cleaned_data.append(char)
-            else:
-                # cleaned_data.append("<?>")
-                cleaned_data.append(char)
-        metadata.add_text('parameters', "".join(cleaned_data))
+        if 'parameters' in img.info:
+            data = img.info['parameters']
 
-    if debug:
-        print("")
-        print(metadata)
+            cleaned_data = []
+            for char in data:
+                if char in UNICODE_TO_ASCII_MAP:
+                    cleaned_data.append(UNICODE_TO_ASCII_MAP[char])
+                elif ord(char) < 128:
+                    cleaned_data.append(char)
+                else:
+                    msg = f"Found unicode character {char} ({ord(char)}) in {input_path}"
+                    if log_file is not None:
+                        log_file.write(msg)
+                        log_file.flush()
+                    else:
+                        print(msg)
+                    cleaned_data.append(f"U{ord(char):04x}")
+            metadata.add_text('parameters', "".join(cleaned_data))
 
-    img.save(output_path, pnginfo=metadata)
+        if debug:
+            print("")
+            print(metadata)
+
+        img.save(output_path, pnginfo=metadata)
 
 
-def main_single(input_path, output_path, debug):
-    clean_metadata(input_path, output_path, debug)
+def main_single(input_path, output_path, debug, log_file):
+    clean_metadata(input_path, output_path, debug, log_file)
 
 
-def main_batch(input_dir, output_dir, debug):
+def main_batch(input_dir, output_dir, debug, log_file):
     if not os.path.exists(input_dir):
         print(f"Error: {input_dir} does not exist")
         sys.exit(1)
@@ -59,13 +73,14 @@ def main_batch(input_dir, output_dir, debug):
         if filename.endswith(".png"):
             input_path = os.path.join(input_dir, filename)
             output_path = os.path.join(output_dir, filename)
-            clean_metadata(input_path, output_path, debug)
+            clean_metadata(input_path, output_path, debug, log_file)
 
 
 def main():
     args = sys.argv[1:]
     debug = False
     batch = False
+    log_path = None
     input_path = None
     output_path = None
 
@@ -93,6 +108,7 @@ def main():
             print("  --output <path>  Path to the output image/directory")
             print("  --debug          Print debug info")
             print("  --batch          Use batch mode to process directory of images")
+            print("  --log <path>     Path to the log file")
             sys.exit(0)
         else:
             print(f"Error: Unexpected argument {args[i]}")
@@ -102,10 +118,18 @@ def main():
         print("Error: --input and --output are required")
         sys.exit(1)
 
-    if batch:
-        main_batch(input_path, output_path, debug)
+
+    def go_log(log_file):
+        if batch:
+            main_batch(input_path, output_path, debug, log_file)
+        else:
+            main_single(input_path, output_path, debug, log_file)
+
+    if log_path is None:
+        go_log(None)
     else:
-        main_single(input_path, output_path, debug)
+        with open(log_path, 'w') as log_file:
+            go_log(log_file)
 
 
 if __name__ == "__main__":
