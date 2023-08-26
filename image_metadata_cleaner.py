@@ -26,7 +26,7 @@ UNICODE_TO_ASCII_MAP = {
     # (339)
     "œ": "ae",
     # (345)
-    "ŕ": "r",
+    "ř": "r",
     # (347)
     "ś": "s",
     # (353)
@@ -41,6 +41,8 @@ UNICODE_TO_ASCII_MAP = {
     "φ": "phi",
     # (8208)
     "‐": "-",
+    # (8211)
+    "–": "-",
     # (8220)
     "“": '"',
     # (8221)
@@ -143,6 +145,10 @@ def main_batch(input_dir, output_dir, debug, log_file):
                 print(f"Processed {index} images")
 
 
+# List of absolute file paths to override batch mode. Nice for hacking.
+batch_override = []
+
+
 def main():
     args = sys.argv[1:]
     debug = False
@@ -187,7 +193,11 @@ def main():
 
     def go_log(log_file):
         if batch:
-            main_batch(input_path, output_path, debug, log_file)
+            if batch_override:
+                for path in batch_override:
+                    main_single(path, path, debug, log_file)
+            else:
+                main_batch(input_path, output_path, debug, log_file)
         else:
             main_single(input_path, output_path, debug, log_file)
 
