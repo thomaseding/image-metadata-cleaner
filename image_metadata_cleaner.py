@@ -7,12 +7,36 @@ from PIL import Image, PngImagePlugin
 UNICODE_TO_ASCII_MAP = {
     # (187)
     "»": ",",
+    # (263)
+    "ć": "c",
+    # (269)
+    "č": "c",
+    # (281)
+    "ę": "e",
+    # (283)
+    "ě": "e",
+    # (285)
+    "ĝ": "g",
+    # (287)
+    "ğ": "g",
     # (322)
     "ł": "l",
     # (324)
     "ń": "n",
     # (339)
     "œ": "ae",
+    # (345)
+    "ŕ": "r",
+    # (347)
+    "ś": "s",
+    # (353)
+    "š": "s",
+    # (357)
+    "ţ": "t",
+    # (363)
+    "ű": "u",
+    # (382)
+    "ž": "z",
     # (966)
     "φ": "phi",
     # (8208)
@@ -45,6 +69,7 @@ UNICODE_TO_ASCII_MAP = {
     "，": ",",
 }
 
+
 @contextlib.contextmanager
 def with_image(path):
     img = Image.open(path)
@@ -52,6 +77,7 @@ def with_image(path):
         yield img
     finally:
         img.close()
+
 
 def clean_metadata(input_path, output_path, debug, log_file):
     with with_image(input_path) as img:
@@ -70,7 +96,9 @@ def clean_metadata(input_path, output_path, debug, log_file):
                 elif ord(char) < 255:
                     cleaned_data.append(char)
                 else:
-                    msg = f"Found unicode character {char} ({ord(char)}) in {input_path}"
+                    msg = (
+                        f"Found unicode character {char} ({ord(char)}) in {input_path}"
+                    )
                     if log_file is not None:
                         log_file.write(msg)
                         log_file.flush()
@@ -104,11 +132,15 @@ def main_batch(input_dir, output_dir, debug, log_file):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    index = 0
     for filename in os.listdir(input_dir):
         if filename.endswith(".png"):
+            index += 1
             input_path = os.path.join(input_dir, filename)
             output_path = os.path.join(output_dir, filename)
             clean_metadata(input_path, output_path, debug, log_file)
+            if index % 100 == 0:
+                print(f"Processed {index} images")
 
 
 def main():
@@ -153,7 +185,6 @@ def main():
         print("Error: --input and --output are required")
         sys.exit(1)
 
-
     def go_log(log_file):
         if batch:
             main_batch(input_path, output_path, debug, log_file)
@@ -163,7 +194,7 @@ def main():
     if log_path is None:
         go_log(None)
     else:
-        with open(log_path, 'w') as log_file:
+        with open(log_path, "w") as log_file:
             go_log(log_file)
 
 
