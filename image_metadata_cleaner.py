@@ -106,7 +106,7 @@ def clean_metadata(input_path, output_path, debug, log_file):
                         log_file.flush()
                     else:
                         print(msg)
-                    cleaned_data.append(f"U{ord(char):04x}")
+                    cleaned_data.append(f"\u{ord(char):04x}")
             metadata.add_text("parameters", "".join(cleaned_data))
 
         if debug:
