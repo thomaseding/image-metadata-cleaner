@@ -106,7 +106,9 @@ def clean_metadata(input_path, output_path, debug, log_file):
                         log_file.flush()
                     else:
                         print(msg)
-                    cleaned_data.append(f"\u{ord(char):04x}")
+                    # NOTE: I tried using `\u` but it didn't work. I'm not sure why
+                    # Whatever. This is good enough
+                    cleaned_data.append(f"U{ord(char):04x}")
             metadata.add_text("parameters", "".join(cleaned_data))
 
         if debug:
@@ -141,7 +143,7 @@ def main_batch(input_dir, output_dir, debug, log_file):
             input_path = os.path.join(input_dir, filename)
             output_path = os.path.join(output_dir, filename)
             clean_metadata(input_path, output_path, debug, log_file)
-            if index % 100 == 0:
+            if index % 50 == 0:
                 print(f"Processed {index} images")
 
 
